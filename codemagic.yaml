@@ -1,0 +1,63 @@
+workflows:
+  ios-workflow:
+    name: iOS Workflow
+    environment:
+      cocoapods: 1.12.0
+      xcode: 14.3
+
+      ios_signing:
+        distribution_type: app_store # or: ad_hoc | development | enterprise
+        bundle_identifier: com.app.MagicLandSlots
+
+      groups:
+        - ATMLS
+      vars:
+        BUNDLE_ID: "com.app.MagicLandSlots"
+        XCODE_WORK: "Unity-iPhone.xcodeproj" # <-- Put the name of your Xcode workspace here
+        XCODE_SCHEME: "Unity-iPhone" # <-- Put the name of your Xcode scheme here
+       
+    scripts:
+      - name: X
+        script: | 
+          xcodebuild clean -project Unity-iPhone.xcodeproj -scheme UnityFramework -configuration Release
+          xcodebuild clean -project Unity-iPhone.xcodeproj -scheme Unity-iPhone -configuration Release
+      
+      - name: Delete derived data
+        script: rm -rf ~/Library/Developer/Xcode/DerivedData
+      
+      - name: Set up provisioning profiles settings on Xcode project
+        script: xcode-project use-profiles
+   
+      - name: clean
+        script: |
+          xcodebuild clean
+      
+      - name: Build ipa for distribution
+        script: |
+          xcode-project build-ipa \
+            --project $CM_BUILD_DIR/$XCODE_WORK \
+            --scheme "$XCODE_SCHEME" \
+            --verbose
+            
+    artifacts:
+      - ios_distribution.key
+      - ios_distribution.csr
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
+        expire_build_submitted_for_review: true
+
+        beta_groups:
+          - test 1
+          - test 2
+
+        submit_to_app_store: false
+        #cancel_previous_submissions: true
+        #release_type: MANUAL
