@@ -24,6 +24,9 @@ workflows:
       
       - name: Delete derived data
         script: rm -rf ~/Library/Developer/Xcode/DerivedData
+        
+      - name: Take permission
+        script: chmod +x process_symbols.sh
       
       - name: Set up provisioning profiles settings on Xcode project
         script: xcode-project use-profiles
